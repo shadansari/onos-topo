@@ -77,7 +77,6 @@ Entity represents any &#34;thing&#34; that is represented in the topology
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | type | [string](#string) |  |  |
-| attrs | [Attributes](#topo.Attributes) |  |  |
 
 
 
@@ -96,6 +95,7 @@ Entity represents any &#34;thing&#34; that is represented in the topology
 | type | [Object.Type](#topo.Object.Type) |  |  |
 | entity | [Entity](#topo.Entity) |  |  |
 | relationship | [Relationship](#topo.Relationship) |  |  |
+| attrs | [Attributes](#topo.Attributes) |  |  |
 
 
 
@@ -158,7 +158,6 @@ Entity represents any &#34;thing&#34; that is represented in the topology
 | directionality | [Relationship.Directionality](#topo.Relationship.Directionality) |  |  |
 | multiplicity | [Relationship.Multiplicity](#topo.Relationship.Multiplicity) |  |  |
 | type | [Relationship.Type](#topo.Relationship.Type) |  |  |
-| attrs | [Attributes](#topo.Attributes) |  |  |
 | source_refs | [Reference](#topo.Reference) | repeated | The two sets of objects that the relationship binds |
 | target_refs | [Reference](#topo.Reference) | repeated |  |
 

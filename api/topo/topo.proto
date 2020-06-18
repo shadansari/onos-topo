@@ -104,14 +104,14 @@ message Object {
     Relationship relationship = 4;
   }
 
+  Attributes attrs = 5;
+
 }
 
 // Entity represents any "thing" that is represented in the topology
 message Entity {
 
   string type = 2;
-
-  Attributes attrs = 3;
 
 }
 
@@ -145,10 +145,8 @@ message Relationship {
   }
   Type type = 3;
 
-  Attributes attrs = 4;
-
   // The two sets of objects that the relationship binds
-  repeated Reference source_refs = 5;
-  repeated Reference target_refs = 6;
+  repeated Reference source_refs = 4;
+  repeated Reference target_refs = 5;
 
 }

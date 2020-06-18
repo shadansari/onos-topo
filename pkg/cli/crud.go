@@ -69,3 +69,21 @@ func getLoadCommand() *cobra.Command {
 	cmd.AddCommand(getLoadYamlCommand())
 	return cmd
 }
+
+func getGetEntityCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "get {entity} [args]",
+		Short: "Get topology entity",
+	}
+	cmd.AddCommand(getGetEntityCommand())
+	return cmd
+}
+
+func getAddEntityCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "add {entity} [args]",
+		Short: "Add a topology entity",
+	}
+	cmd.AddCommand(getAddEntityCommand())
+	return cmd
+}

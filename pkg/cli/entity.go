@@ -27,20 +27,22 @@ import (
 
 func getGetEntityCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "entity <id>",
-		Aliases: []string{"entities"},
-		Args:    cobra.MaximumNArgs(1),
-		Short:   "Get a topo entity",
-		RunE:    runGetEntityCommand,
+		Use:   "get-entity <id>",
+		Args:  cobra.MinimumNArgs(1),
+		Short: "Get a topo entity",
+		RunE:  runGetEntityCommand,
 	}
-	cmd.Flags().BoolP("verbose", "v", false, "whether to print the entity with verbose output")
-	cmd.Flags().Bool("no-headers", false, "disables output headers")
+	/*
+		cmd.Flags().StringP("id", "i", "", "the id of the entity")
+		cmd.Flags().BoolP("verbose", "v", false, "whether to print the entity with verbose output")
+
+		_ = cmd.MarkFlagRequired("id")
+	*/
+
 	return cmd
 }
 
 func runGetEntityCommand(cmd *cobra.Command, args []string) error {
-	//verbose, _ := cmd.Flags().GetBool("verbose")
-	//noHeaders, _ := cmd.Flags().GetBool("no-headers")
 
 	conn, err := cli.GetConnection(cmd)
 	if err != nil {
@@ -58,22 +60,28 @@ func runGetEntityCommand(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
 		// TODO - implement List function
 	} else {
-		refs := make([]*topo.Reference, 1)
-		refs[0].ID = topo.ID(args[0])
+		reference := &topo.Reference{
+			ID: topo.ID(args[0]),
+		}
+		refs := []*topo.Reference{reference}
 		response, err := client.Read(ctx, &topo.ReadRequest{Refs: refs})
 		if err != nil {
 			cli.Output("get error")
 			return err
 		}
 
-		switch obj := response.Objects[0].Obj.(type) {
-		case *topo.Object_Entity:
-			_, _ = fmt.Fprintf(writer, "ID\t%s\n", response.Objects[0].Ref.GetID())
-			_, _ = fmt.Fprintf(writer, "Type\t%s\n", obj.Entity.GetType())
-		case nil:
-			// No object is set
-		default:
-			// return ERROR
+		if len(response.Objects) != 0 {
+			switch obj := response.Objects[0].Obj.(type) {
+			case *topo.Object_Entity:
+				_, _ = fmt.Fprintf(writer, "ID\t%s\n", response.Objects[0].Ref.GetID())
+				_, _ = fmt.Fprintf(writer, "Type\t%s\n", obj.Entity.GetType())
+			case nil:
+				cli.Output("No object is set")
+				// No object is set
+			default:
+				cli.Output("get error")
+				// return ERROR
+			}
 		}
 	}
 	return writer.Flush()
@@ -81,7 +89,7 @@ func runGetEntityCommand(cmd *cobra.Command, args []string) error {
 
 func getAddEntityCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "entity <id> [args]",
+		Use:     "<id> [args]",
 		Aliases: []string{"entities"},
 		Args:    cobra.ExactArgs(1),
 		Short:   "Add an entity",

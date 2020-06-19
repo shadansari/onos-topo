@@ -70,18 +70,20 @@ func getLoadCommand() *cobra.Command {
 	return cmd
 }
 
+/*
 func getGetEntityCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "get {entity} [args]",
+		Use:   "get-entity [args]",
 		Short: "Get topology entity",
 	}
 	cmd.AddCommand(getGetEntityCommand())
 	return cmd
 }
+*/
 
 func getAddEntityCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add {entity} [args]",
+		Use:   "add-entity [args]",
 		Short: "Add a topology entity",
 	}
 	cmd.AddCommand(getAddEntityCommand())

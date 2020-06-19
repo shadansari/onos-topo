@@ -46,9 +46,9 @@ func GetCommand() *cobra.Command {
 
 	cmd.AddCommand(clilib.GetConfigCommand())
 	cmd.AddCommand(getGetCommand())
-	cmd.AddCommand(getGetEntityCmd())
+	cmd.AddCommand(getGetEntityCommand())
 	cmd.AddCommand(getAddCommand())
-	cmd.AddCommand(getAddEntityCmd())
+	cmd.AddCommand(getAddEntityCommand())
 	cmd.AddCommand(getUpdateCommand())
 	cmd.AddCommand(getRemoveCommand())
 	cmd.AddCommand(getWatchCommand())

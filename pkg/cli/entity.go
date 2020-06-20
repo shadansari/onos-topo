@@ -89,23 +89,17 @@ func runGetEntityCommand(cmd *cobra.Command, args []string) error {
 
 func getAddEntityCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "<id> [args]",
-		Aliases: []string{"entities"},
-		Args:    cobra.ExactArgs(1),
-		Short:   "Add an entity",
-		RunE:    runAddEntityCommand,
+		Use:   "add-entity <type> <id> [args]",
+		Args:  cobra.MinimumNArgs(2),
+		Short: "Add an entity",
+		RunE:  runAddEntityCommand,
 	}
-	cmd.Flags().StringP("type", "t", "", "the type of the entity")
-	cmd.Flags().StringToString("attributes", map[string]string{}, "an arbitrary mapping of attributes")
-
-	_ = cmd.MarkFlagRequired("type")
 	return cmd
 }
 
 func runAddEntityCommand(cmd *cobra.Command, args []string) error {
-	id := args[0]
-	entityType, _ := cmd.Flags().GetString("type")
-	//attributes, _ := cmd.Flags().GetStringToString("attributes")
+	entityType := args[0]
+	id := args[1]
 
 	conn, err := cli.GetConnection(cmd)
 	if err != nil {

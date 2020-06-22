@@ -73,11 +73,13 @@ func runGetEntityCommand(cmd *cobra.Command, args []string) error {
 
 func getAddEntityCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-entity <type> <id> [args]",
-		Args:  cobra.MinimumNArgs(2),
+		Use:   "add-entity <id> [args]",
+		Args:  cobra.MinimumNArgs(1),
 		Short: "Add an entity",
 		RunE:  runAddEntityCommand,
 	}
+	cmd.Flags().StringP("type", "t", "", "the type of the entity")
+	//_ = cmd.MarkFlagRequired("type")
 	return cmd
 }
 
@@ -113,13 +115,17 @@ func runGetRelationCommand(cmd *cobra.Command, args []string) error {
 		switch obj := objects[0].Obj.(type) {
 		case *topo.Object_Relationship:
 			_, _ = fmt.Fprintf(writer, "ID\t%s\n", objects[0].Ref.GetID())
-			_, _ = fmt.Fprintf(writer, "Type\t%s\n", obj.Relationship.GetType())
+			_, _ = fmt.Fprintf(writer, "type\t%s\n", obj.Relationship.GetType())
+			for _, ref := range obj.Relationship.GetSourceRefs() {
+				_, _ = fmt.Fprintf(writer, "src-entity-id\t%s\n", string(ref.ID))
+			}
+			for _, ref := range obj.Relationship.GetTargetRefs() {
+				_, _ = fmt.Fprintf(writer, "tgt-entity-id\t%s\n", string(ref.ID))
+			}
 		case nil:
-			cli.Output("No object is set")
-			// No object is set
+			cli.Output("Error: nil object\n")
 		default:
-			cli.Output("get error")
-			// return ERROR
+			cli.Output("Error: get error\n")
 		}
 	}
 	return writer.Flush()
@@ -127,11 +133,12 @@ func runGetRelationCommand(cmd *cobra.Command, args []string) error {
 
 func getAddRelationCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-relation <type> <id> [args]",
-		Args:  cobra.MinimumNArgs(2),
+		Use:   "add-relation <id> <src-entity-id> <tgt-entity-id> [args]",
+		Args:  cobra.MinimumNArgs(3),
 		Short: "Add a topo relationship",
 		RunE:  runAddRelationCommand,
 	}
+	cmd.Flags().StringP("type", "t", "", "the type of the entity")
 	return cmd
 }
 
@@ -140,8 +147,7 @@ func runAddRelationCommand(cmd *cobra.Command, args []string) error {
 }
 
 func writeObject(cmd *cobra.Command, args []string, objectType topo.Object_Type, updateType topo.Update_Type) error {
-	entityType := args[0]
-	id := args[1]
+	id := args[0]
 
 	conn, err := cli.GetConnection(cmd)
 	if err != nil {
@@ -153,18 +159,40 @@ func writeObject(cmd *cobra.Command, args []string, objectType topo.Object_Type,
 
 	updates := make([]*topo.Update, 1)
 
-	updates[0] = &topo.Update{
-		Type: updateType,
-		Object: &topo.Object{
-			Ref: &topo.Reference{
-				ID: topo.ID(id)},
-			Type: objectType,
-			Obj: &topo.Object_Entity{
-				Entity: &topo.Entity{
-					Type: entityType,
-				},
+	if objectType == topo.Object_ENTITY {
+		entityType, _ := cmd.Flags().GetString("type")
+		object := &topo.Object_Entity{
+			Entity: &topo.Entity{
+				Type: entityType,
 			},
-		},
+		}
+
+		updates[0] = &topo.Update{
+			Type: updateType,
+			Object: &topo.Object{
+				Ref: &topo.Reference{
+					ID: topo.ID(id)},
+				Type: objectType,
+				Obj:  object,
+			},
+		}
+	} else if objectType == topo.Object_RELATIONSHIP {
+		object := &topo.Object_Relationship{
+			Relationship: &topo.Relationship{
+				SourceRefs: []*topo.Reference{{ID: topo.ID(args[1])}},
+				TargetRefs: []*topo.Reference{{ID: topo.ID(args[2])}},
+			},
+		}
+
+		updates[0] = &topo.Update{
+			Type: updateType,
+			Object: &topo.Object{
+				Ref: &topo.Reference{
+					ID: topo.ID(id)},
+				Type: objectType,
+				Obj:  object,
+			},
+		}
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -174,13 +202,13 @@ func writeObject(cmd *cobra.Command, args []string, objectType topo.Object_Type,
 	if err != nil {
 		return err
 	}
-	cli.Output("Added entity %s \n", id)
 	return nil
 }
 
 func readObjects(cmd *cobra.Command, args []string) ([]*topo.Object, error) {
 
 	var objects []*topo.Object
+	id := args[0]
 
 	conn, err := cli.GetConnection(cmd)
 	if err != nil {
@@ -196,7 +224,7 @@ func readObjects(cmd *cobra.Command, args []string) ([]*topo.Object, error) {
 		// TODO - implement List function
 	} else {
 		reference := &topo.Reference{
-			ID: topo.ID(args[0]),
+			ID: topo.ID(id),
 		}
 		refs := []*topo.Reference{reference}
 		response, err := client.Read(ctx, &topo.ReadRequest{Refs: refs})

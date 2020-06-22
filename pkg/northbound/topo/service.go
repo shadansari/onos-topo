@@ -104,6 +104,7 @@ func (s *Server) Read(ctx context.Context, request *topoapi.ReadRequest) (*topoa
 			log.Infof("Not found object %s", string(id))
 			return nil, status.Error(codes.NotFound, string(id))
 		}
+		log.Infof("Read object %v", object)
 		objects = append(objects, object)
 	}
 

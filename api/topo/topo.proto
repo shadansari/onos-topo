@@ -146,7 +146,7 @@ message Relationship {
   Type type = 3;
 
   // The two sets of objects that the relationship binds
-  repeated Reference source_refs = 4;
-  repeated Reference target_refs = 5;
+  repeated Reference source_refs = 5;
+  repeated Reference target_refs = 6;
 
 }

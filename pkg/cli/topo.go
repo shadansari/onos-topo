@@ -44,44 +44,28 @@ func getGetEntityCommand() *cobra.Command {
 
 func runGetEntityCommand(cmd *cobra.Command, args []string) error {
 
-	conn, err := cli.GetConnection(cmd)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
+	var objects []*topo.Object
+
 	outputWriter := cli.GetOutput()
 	writer := new(tabwriter.Writer)
 	writer.Init(outputWriter, 0, 0, 3, ' ', tabwriter.FilterHTML)
 
-	client := topo.CreateTopoClient(conn)
+	objects, err := readObjects(cmd, args)
+	if err != nil {
+		return err
+	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-	if len(args) == 0 {
-		// TODO - implement List function
-	} else {
-		reference := &topo.Reference{
-			ID: topo.ID(args[0]),
-		}
-		refs := []*topo.Reference{reference}
-		response, err := client.Read(ctx, &topo.ReadRequest{Refs: refs})
-		if err != nil {
+	if len(objects) != 0 {
+		switch obj := objects[0].Obj.(type) {
+		case *topo.Object_Entity:
+			_, _ = fmt.Fprintf(writer, "ID\t%s\n", objects[0].Ref.GetID())
+			_, _ = fmt.Fprintf(writer, "Type\t%s\n", obj.Entity.GetType())
+		case nil:
+			cli.Output("No object is set")
+			// No object is set
+		default:
 			cli.Output("get error")
-			return err
-		}
-
-		if len(response.Objects) != 0 {
-			switch obj := response.Objects[0].Obj.(type) {
-			case *topo.Object_Entity:
-				_, _ = fmt.Fprintf(writer, "ID\t%s\n", response.Objects[0].Ref.GetID())
-				_, _ = fmt.Fprintf(writer, "Type\t%s\n", obj.Entity.GetType())
-			case nil:
-				cli.Output("No object is set")
-				// No object is set
-			default:
-				cli.Output("get error")
-				// return ERROR
-			}
+			// return ERROR
 		}
 	}
 	return writer.Flush()
@@ -98,6 +82,64 @@ func getAddEntityCommand() *cobra.Command {
 }
 
 func runAddEntityCommand(cmd *cobra.Command, args []string) error {
+	return writeObject(cmd, args, topo.Object_ENTITY, topo.Update_INSERT)
+}
+
+func getGetRelationCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "get-relation <id>",
+		Args:  cobra.MinimumNArgs(1),
+		Short: "Get a topo relationship",
+		RunE:  runGetRelationCommand,
+	}
+
+	return cmd
+}
+
+func runGetRelationCommand(cmd *cobra.Command, args []string) error {
+
+	var objects []*topo.Object
+
+	outputWriter := cli.GetOutput()
+	writer := new(tabwriter.Writer)
+	writer.Init(outputWriter, 0, 0, 3, ' ', tabwriter.FilterHTML)
+
+	objects, err := readObjects(cmd, args)
+	if err != nil {
+		return err
+	}
+
+	if len(objects) != 0 {
+		switch obj := objects[0].Obj.(type) {
+		case *topo.Object_Relationship:
+			_, _ = fmt.Fprintf(writer, "ID\t%s\n", objects[0].Ref.GetID())
+			_, _ = fmt.Fprintf(writer, "Type\t%s\n", obj.Relationship.GetType())
+		case nil:
+			cli.Output("No object is set")
+			// No object is set
+		default:
+			cli.Output("get error")
+			// return ERROR
+		}
+	}
+	return writer.Flush()
+}
+
+func getAddRelationCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "add-relation <type> <id> [args]",
+		Args:  cobra.MinimumNArgs(2),
+		Short: "Add a topo relationship",
+		RunE:  runAddRelationCommand,
+	}
+	return cmd
+}
+
+func runAddRelationCommand(cmd *cobra.Command, args []string) error {
+	return writeObject(cmd, args, topo.Object_RELATIONSHIP, topo.Update_INSERT)
+}
+
+func writeObject(cmd *cobra.Command, args []string, objectType topo.Object_Type, updateType topo.Update_Type) error {
 	entityType := args[0]
 	id := args[1]
 
@@ -112,11 +154,11 @@ func runAddEntityCommand(cmd *cobra.Command, args []string) error {
 	updates := make([]*topo.Update, 1)
 
 	updates[0] = &topo.Update{
-		Type: topo.Update_INSERT,
+		Type: updateType,
 		Object: &topo.Object{
 			Ref: &topo.Reference{
 				ID: topo.ID(id)},
-			Type: topo.Object_ENTITY,
+			Type: objectType,
 			Obj: &topo.Object_Entity{
 				Entity: &topo.Entity{
 					Type: entityType,
@@ -134,4 +176,35 @@ func runAddEntityCommand(cmd *cobra.Command, args []string) error {
 	}
 	cli.Output("Added entity %s \n", id)
 	return nil
+}
+
+func readObjects(cmd *cobra.Command, args []string) ([]*topo.Object, error) {
+
+	var objects []*topo.Object
+
+	conn, err := cli.GetConnection(cmd)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+
+	client := topo.CreateTopoClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	if len(args) == 0 {
+		// TODO - implement List function
+	} else {
+		reference := &topo.Reference{
+			ID: topo.ID(args[0]),
+		}
+		refs := []*topo.Reference{reference}
+		response, err := client.Read(ctx, &topo.ReadRequest{Refs: refs})
+		if err != nil {
+			cli.Output("get error")
+			return nil, err
+		}
+		objects = response.Objects
+	}
+	return objects, nil
 }
